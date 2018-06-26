@@ -87,6 +87,14 @@ class Cycvis():
                                               agent['lifetime']
                                               ]
                       for agent in results}
+        # filter out ones without longitude and latitude
+        self.filter_key_list = []
+        for agentid, values in agent_info.items():
+            if values[2] == 0 and values[3] == 0:
+                self.filter_key_list.append(agentid)
+        for key in self.filter_key_list:
+            del agent_info[key]
+
         return agent_info
 
     def list_available_archetypes(self):
@@ -248,15 +256,19 @@ class Cycvis():
         results = self.cur.execute(query)
         transaction_dict = defaultdict(list)
         for row in results:
-            lifetime = self.agent_info[str(row['senderid'])][-1]
-            if lifetime == -1:
-                lifetime = (self.timestep[-1] -
-                            self.agent_info[str(row['senderid'])][-2])
-            transaction_dict[(row['senderid'],
-                              row['receiverid'],
-                              row['commodity']
-                              )
-                             ].append((row['time'], row['quantity']))
+            print(row['senderid'])
+            print(row['receiverid'])
+            print(self.filter_key_list)
+            if str(row['senderid']) not in self.filter_key_list and str(row['receiverid']) not in self.filter_key_list:
+                lifetime = self.agent_info[str(row['senderid'])][-1]
+                if lifetime == -1:
+                    lifetime = (self.timestep[-1] -
+                                self.agent_info[str(row['senderid'])][-2])
+                transaction_dict[(row['senderid'],
+                                  row['receiverid'],
+                                  row['commodity']
+                                  )
+                                 ].append((row['time'], row['quantity']))
         return transaction_dict
 
     def get_lons_lats_labels(self, arch, merge=False):
